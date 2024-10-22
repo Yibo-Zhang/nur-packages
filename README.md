@@ -35,3 +35,50 @@ Uncomment this if you use travis:
 -->
 [![Cachix Cache](https://img.shields.io/badge/cachix-<YOUR_CACHIX_CACHE_NAME>-blue.svg)](https://<YOUR_CACHIX_CACHE_NAME>.cachix.org)
 
+# build
+
+```bash
+nix flake update # 可选，将 flake.lock 中的 Nixpkgs 等仓库更新到最新版
+nix build ".#example-package"
+```
+
+# Usage
+
+对于使用 Nix Flake 的用户，在 flake.nix 中的 inputs 一节中添加如下定义：
+```nix
+inputs = {
+  # ...
+  myRepo = {
+    url = "github:Yibo-Zhang/nur-packages";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+  # ...
+};
+```
+
+然后，在 flake.nix 中的 output 一节，你的 nixosConfigurations 定义中，为每个系统添加一个 module：
+```nix
+outputs = { self, nixpkgs, ... }@inputs: {
+  nixosConfigurations."nixos" = nixpkgs.lib.nixosSystem {
+    system = "x86_64-linux";
+    modules = [
+      # 在 modules 的开头添加下面这几行
+      ({
+        nixpkgs.overlays = [
+          (final: prev: {
+            myRepo = inputs.myRepo.packages."${prev.system}";
+          })
+        ];
+      })
+      # 在 modules 的开头添加上面这几行
+
+      ./configuration.nix
+    ];
+  };
+};
+```
+这样操作后，你就能用类似于 pkgs.myRepo.example-package 的方式使用你打的包了。
+
+
+
+

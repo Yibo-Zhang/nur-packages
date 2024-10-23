@@ -19,5 +19,7 @@
         pkgs = import nixpkgs { inherit system; };
       });
       packages = forAllSystems (system: nixpkgs.lib.filterAttrs (_: v: nixpkgs.lib.isDerivation v) self.legacyPackages.${system});
+      # 添加这一行来导出 nixosModules
+      nixosModules = import ./modules;
     };
 }
